@@ -4,15 +4,18 @@ using namespace std;
 class Product {
 private:
     int productID;
-    string name;
+    char name[50];
     double price;
     int stockQuantity;
 
 public:
-    Product(int id, string n, double p, int stock) : productID(id), name(n), price(p), stockQuantity(stock) {}
+    Product(int id, const char* n, double p, int stock) : productID(id), price(p), stockQuantity(stock) {
+        strncpy(name, n, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+    }
 
     int getID() { return productID; }
-    string getName() { return name; }
+    const char* getName() { return name; }
     double getPrice() { return price; }
     int getStock() { return stockQuantity; }
     void reduceStock(int quantity) { if (stockQuantity >= quantity) stockQuantity -= quantity; }
@@ -100,15 +103,15 @@ public:
 int ShoppingCart::orderID = 1;
 
 bool getValidInput(int &input) {
-    string userInput;
+    char userInput[10];
     cin >> userInput;
-    for (char c : userInput) {
-        if (!isdigit(c)) {
+    for (int i = 0; userInput[i] != '\0'; i++) {
+        if (!isdigit(userInput[i])) {
             cout << "Invalid input. Please enter a number." << endl;
             return false;
         }
     }
-    input = stoi(userInput);
+    input = atoi(userInput);
     return true;
 }
 
@@ -135,7 +138,8 @@ int main() {
             }
             
             int productID;
-            while (true) {
+            bool selecting = true;
+            while (selecting) {
                 cout << "Enter the ID of the product to add to cart (or 0 to quit): ";
                 if (!getValidInput(productID)) continue;
                 if (productID == 0) break;
