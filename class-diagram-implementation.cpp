@@ -15,10 +15,10 @@ public:
     string getName() { return name; }
     double getPrice() { return price; }
     int getStock() { return stockQuantity; }
-    void reduceStock() { if (stockQuantity > 0) stockQuantity--; }
+    void reduceStock(int quantity) { if (stockQuantity >= quantity) stockQuantity -= quantity; }
 
     void getDetails() {
-        cout << productID << "\t" << name << "\t" << "₱" << price << endl;
+        cout << productID << "\t" << name << "\t" << "\u20B1" << price << endl;
     }
 };
 
@@ -30,16 +30,21 @@ private:
     };
     CartItem cart[10];
     int itemCount;
+    static int orderID;
 
 public:
     ShoppingCart() : itemCount(0) {}
 
     void addProduct(Product &product) {
+        if (itemCount >= 10) {
+            cout << "Cart is full! Cannot add more items." << endl;
+            return;
+        }
         if (product.getStock() > 0) {
             for (int i = 0; i < itemCount; i++) {
                 if (cart[i].product->getID() == product.getID()) {
                     cart[i].quantity++;
-                    product.reduceStock();
+                    product.reduceStock(1);
                     cout << "Product added successfully!" << endl;
                     return;
                 }
@@ -47,7 +52,7 @@ public:
             cart[itemCount].product = &product;
             cart[itemCount].quantity = 1;
             itemCount++;
-            product.reduceStock();
+            product.reduceStock(1);
             cout << "Product added successfully!" << endl;
         } else {
             cout << "Product out of stock!" << endl;
@@ -63,37 +68,49 @@ public:
         for (int i = 0; i < itemCount; i++) {
             cout << cart[i].product->getID() << "\t"
                  << cart[i].product->getName() << "\t"
-                 << "₱" << cart[i].product->getPrice() << "\t"
+                 << "\u20B1" << cart[i].product->getPrice() << "\t"
                  << cart[i].quantity << endl;
         }
     }
 
-    double calculateTotal() {
-        double total = 0;
-        for (int i = 0; i < itemCount; i++) {
-            total += cart[i].product->getPrice() * cart[i].quantity;
+    void checkout() {
+        if (itemCount == 0) {
+            cout << "Shopping cart is empty. Cannot checkout." << endl;
+            return;
         }
-        return total;
+        double totalAmount = 0;
+        cout << "Order ID: " << orderID++ << endl;
+        cout << "Total Amount: ";
+        for (int i = 0; i < itemCount; i++) {
+            totalAmount += cart[i].product->getPrice() * cart[i].quantity;
+        }
+        cout << totalAmount << endl;
+        cout << "Order Details:" << endl;
+        cout << "Product ID\tName\tPrice\tQuantity" << endl;
+        for (int i = 0; i < itemCount; i++) {
+            cout << cart[i].product->getID() << "\t"
+                 << cart[i].product->getName() << "\t"
+                 << cart[i].product->getPrice() << "\t"
+                 << cart[i].quantity << endl;
+        }
+        itemCount = 0;
     }
 };
 
-class Order {
-private:
-    int orderID;
-    ShoppingCart cart;
-    double totalAmount;
+int ShoppingCart::orderID = 1;
 
-public:
-    Order(int id, ShoppingCart &c) : orderID(id), cart(c) {
-        totalAmount = cart.calculateTotal();
+bool getValidInput(int &input) {
+    string userInput;
+    cin >> userInput;
+    for (char c : userInput) {
+        if (!isdigit(c)) {
+            cout << "Invalid input. Please enter a number." << endl;
+            return false;
+        }
     }
-
-    void getOrderDetails() {
-        cout << "Order ID: " << orderID << endl;
-        cart.viewCart();
-        cout << "Total Amount: ₱" << totalAmount << endl;
-    }
-};
+    input = stoi(userInput);
+    return true;
+}
 
 int main() {
     Product products[] = {
@@ -103,28 +120,26 @@ int main() {
         Product(4, "Monitor", 199.99, 4),
         Product(5, "Headphones", 59.99, 6)
     };
-    ShoppingCart cart;
-    Order *orders[10];
-    int orderCount = 0;
-    int orderID = 1;
     
+    ShoppingCart cart;
+    int choice;
     bool running = true;
     while (running) {
-        cout << "\nMenu:\n1. View Products\n2. View Shopping Cart\n3. View Orders\n4. Exit\nEnter your choice: ";
-        int choice;
-        cin >> choice;
+        cout << "\nMenu:\n1. View Products\n2. View Shopping Cart\n3. Checkout\n4. Exit\nEnter your choice: ";
+        if (!getValidInput(choice)) continue;
         
         if (choice == 1) {
             cout << "ProductID\tName\tPrice" << endl;
             for (int i = 0; i < 5; i++) {
                 products[i].getDetails();
             }
-            bool adding = true;
-            while (adding) {
+            
+            int productID;
+            while (true) {
                 cout << "Enter the ID of the product to add to cart (or 0 to quit): ";
-                int productID;
-                cin >> productID;
+                if (!getValidInput(productID)) continue;
                 if (productID == 0) break;
+                
                 bool found = false;
                 for (int i = 0; i < 5; i++) {
                     if (products[i].getID() == productID) {
@@ -134,38 +149,17 @@ int main() {
                     }
                 }
                 if (!found) {
-                    cout << "Invalid Product ID." << endl;
+                    cout << "Invalid Product ID. Please try again." << endl;
                 }
             }
-        }
-        else if (choice == 2) {
+        } else if (choice == 2) {
             cart.viewCart();
-            cout << "Do you want to checkout? (1 for Yes, 0 for No): ";
-            int checkout;
-            cin >> checkout;
-            if (checkout == 1) {
-                orders[orderCount++] = new Order(orderID++, cart);
-                cout << "You have successfully checked out!" << endl;
-                for (int i = 0; i < orderCount; i++) {
-                    orders[i]->getOrderDetails();
-                }
-                cart = ShoppingCart();
-            }
-        }
-        else if (choice == 3) {
-            if (orderCount == 0) {
-                cout << "No orders placed yet." << endl;
-            } else {
-                for (int i = 0; i < orderCount; i++) {
-                    orders[i]->getOrderDetails();
-                }
-            }
-        }
-        else if (choice == 4) {
+        } else if (choice == 3) {
+            cart.checkout();
+        } else if (choice == 4) {
             cout << "Exiting..." << endl;
             running = false;
-        }
-        else {
+        } else {
             cout << "Invalid choice, try again." << endl;
         }
     }
