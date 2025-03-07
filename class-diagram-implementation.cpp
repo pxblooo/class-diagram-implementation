@@ -1,21 +1,19 @@
 #include <iostream>
+#include <limits>
 using namespace std;
 
 class Product {
 private:
     int productID;
-    char name[50];
+    string name;
     double price;
     int stockQuantity;
 
 public:
-    Product(int id, const char* n, double p, int stock) : productID(id), price(p), stockQuantity(stock) {
-        strncpy(name, n, sizeof(name) - 1);
-        name[sizeof(name) - 1] = '\0';
-    }
+    Product(int id, string n, double p, int stock) : productID(id), name(n), price(p), stockQuantity(stock) {}
 
     int getID() { return productID; }
-    const char* getName() { return name; }
+    string getName() { return name; }
     double getPrice() { return price; }
     int getStock() { return stockQuantity; }
     void reduceStock(int quantity) { if (stockQuantity >= quantity) stockQuantity -= quantity; }
@@ -103,16 +101,16 @@ public:
 int ShoppingCart::orderID = 1;
 
 bool getValidInput(int &input) {
-    char userInput[10];
-    cin >> userInput;
-    for (int i = 0; userInput[i] != '\0'; i++) {
-        if (!isdigit(userInput[i])) {
-            cout << "Invalid input. Please enter a number." << endl;
-            return false;
+    while (true) {
+        cin >> input;
+        if (cin.fail() || cin.peek() != '\n') {
+            cout << "Invalid input. Please enter a valid number: ";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        } else {
+            return true;
         }
     }
-    input = atoi(userInput);
-    return true;
 }
 
 int main() {
@@ -138,23 +136,27 @@ int main() {
             }
             
             int productID;
-            bool selecting = true;
-            while (selecting) {
+            bool addingProducts = true;
+            while (addingProducts) {
                 cout << "Enter the ID of the product to add to cart (or 0 to quit): ";
                 if (!getValidInput(productID)) continue;
-                if (productID == 0) break;
                 
-                bool found = false;
-                for (int i = 0; i < 5; i++) {
-                    if (products[i].getID() == productID) {
-                        cart.addProduct(products[i]);
-                        found = true;
-                        break;
+                bool validProduct = false;
+                if (productID == 0) {
+                    addingProducts = false;
+                } else {
+                    for (int i = 0; i < 5; i++) {
+                        if (products[i].getID() == productID) {
+                            cart.addProduct(products[i]);
+                            validProduct = true;
+                            break;
+                        }
+                    }
+                    if (!validProduct) {
+                        cout << "Invalid Product ID. Please try again." << endl;
                     }
                 }
-                if (!found) {
-                    cout << "Invalid Product ID. Please try again." << endl;
-                }
+                break;
             }
         } else if (choice == 2) {
             cart.viewCart();
