@@ -1,5 +1,4 @@
 #include <iostream>
-#include <limits>
 using namespace std;
 
 class Product {
@@ -101,16 +100,16 @@ public:
 int ShoppingCart::orderID = 1;
 
 bool getValidInput(int &input) {
-    while (true) {
-        cin >> input;
-        if (cin.fail() || cin.peek() != '\n') {
-            cout << "Invalid input. Please enter a valid number: ";
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        } else {
-            return true;
+    string userInput;
+    cin >> userInput;
+    for (char c : userInput) {
+        if (!isdigit(c)) {
+            cout << "Invalid input. Please enter a number." << endl;
+            return false;
         }
     }
+    input = stoi(userInput);
+    return true;
 }
 
 int main() {
@@ -136,27 +135,26 @@ int main() {
             }
             
             int productID;
-            bool addingProducts = true;
-            while (addingProducts) {
+            bool addingProduct = true;
+            while (addingProduct) {
                 cout << "Enter the ID of the product to add to cart (or 0 to quit): ";
                 if (!getValidInput(productID)) continue;
-                
-                bool validProduct = false;
                 if (productID == 0) {
-                    addingProducts = false;
-                } else {
-                    for (int i = 0; i < 5; i++) {
-                        if (products[i].getID() == productID) {
-                            cart.addProduct(products[i]);
-                            validProduct = true;
-                            break;
-                        }
-                    }
-                    if (!validProduct) {
-                        cout << "Invalid Product ID. Please try again." << endl;
+                    addingProduct = false;
+                    break;
+                }
+                
+                bool found = false;
+                for (int i = 0; i < 5; i++) {
+                    if (products[i].getID() == productID) {
+                        cart.addProduct(products[i]);
+                        found = true;
+                        break;
                     }
                 }
-                break;
+                if (!found) {
+                    cout << "Invalid Product ID. Please try again." << endl;
+                }
             }
         } else if (choice == 2) {
             cart.viewCart();
